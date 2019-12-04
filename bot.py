@@ -8,7 +8,6 @@ client = None
 def get_room_id(room):
     global client
     for roomid in client.rooms:
-        print(roomid, client.rooms[roomid].named_room_name())
         if client.rooms[roomid].named_room_name() == room.named_room_name():
             return roomid
     print('Cannot find id for room', room.named_room_name(), ' - is the bot on it?')
@@ -16,24 +15,44 @@ def get_room_id(room):
 
 async def message_cb(room, event):
     global client
-    print(
-        "Message received for room {} | {}: {}".format(
-            room.display_name, room.user_name(event.sender), event.body
-        )
-    )
+
     if event.body == '!loc':
         locationmsg = {
             "body": "Tampere, Finland",
             "geo_uri": "geo:61.5,23.766667",
             "msgtype": "m.location",
         }
-        print('Sending location to room id', get_room_id(room))
         await client.room_send(get_room_id(room), 'm.room.message', locationmsg)
 
 async def unknown_cb(room, event):
     if event.msgtype != 'm.location':
         return
-    print('Yay! Got location:', event.content['geo_uri'], event.content['body'])
+
+    location_text = event.content['body']
+
+    # Fallback if body is empty
+    if len(location_text) == 0:
+        location_text = 'location'
+
+    sender_response = await client.get_displayname(event.sender)
+    sender = sender_response.displayname
+
+    geo_uri = event.content['geo_uri']
+    latlon = geo_uri.split(':')[1].split(',')
+
+    # Sanity checks to avoid url manipulation
+    float(latlon[0])
+    float(latlon[1])
+
+    osm_link = 'https://www.openstreetmap.org/?mlat=' + latlon[0] + "&mlon=" + latlon[1]
+
+    location_link_msg = {
+        "body": sender + ": " + location_text + ' - ' + osm_link,
+        "format": "org.matrix.custom.html",
+        "msgtype": "m.text"
+    }
+    await client.room_send(get_room_id(room), 'm.room.message', location_link_msg)
+
 
 async def main():
     global client

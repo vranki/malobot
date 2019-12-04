@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  malobot:
+    container_name: malobot
+    image: 'malobot:latest'
+    build: '.'
+    restart: always
+    environment:
+      - MATRIX_ACCESS_TOKEN
+      - MATRIX_SERVER
