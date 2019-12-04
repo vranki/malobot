@@ -5,7 +5,7 @@ RUN pip install pipenv
 COPY Pipfile .
 #RUN pipenv lock --requirements > requirements.txt
 #RUN pip install -r requirements.txt
-RUN pipenv install
+RUN pipenv install --skip-lock --system
 
 COPY bot.py .
 

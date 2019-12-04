@@ -72,6 +72,7 @@ async def unknown_cb(room, event):
 async def main():
     global client
     access_token = os.getenv('MATRIX_ACCESS_TOKEN')
+
     client = AsyncClient(os.environ['MATRIX_SERVER'], os.environ['MATRIX_USER'])
     if access_token:
         client.access_token = access_token
@@ -79,10 +80,12 @@ async def main():
         await client.login(os.environ['MATRIX_PASSWORD'])
         print("Access token:", client.access_token)
     await client.sync()
-
-    client.add_event_callback(message_cb, RoomMessageText)
-    client.add_event_callback(unknown_cb, RoomMessageUnknown)
-    print('Bot running')
-    await client.sync_forever(timeout=30000)
+    if client.logged_in:
+        client.add_event_callback(message_cb, RoomMessageText)
+        client.add_event_callback(unknown_cb, RoomMessageUnknown)
+        print('Bot running')
+        await client.sync_forever(timeout=30000)
+    else:
+        print('Client was not able to log in, check env variables!')
 
 asyncio.get_event_loop().run_until_complete(main())
