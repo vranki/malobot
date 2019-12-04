@@ -2,8 +2,17 @@ import asyncio
 import os
 import json
 from nio import (AsyncClient, RoomMessageText, RoomMessageUnknown)
+from geopy.geocoders import Nominatim
 
 client = None
+
+async def send_html(body, client, room):
+    msg = {
+        "body": body,
+        "format": "org.matrix.custom.html",
+        "msgtype": "m.text"
+    }
+    await client.room_send(get_room_id(room), 'm.room.message', msg)
 
 def get_room_id(room):
     global client
@@ -16,12 +25,23 @@ def get_room_id(room):
 async def message_cb(room, event):
     global client
 
-    if event.body == '!loc':
+    if event.body.startswith('!loc'):
         locationmsg = {
             "body": "Tampere, Finland",
             "geo_uri": "geo:61.5,23.766667",
             "msgtype": "m.location",
         }
+        if len(event.body) > 6:
+            query = event.body[4:]
+            geolocator = Nominatim(user_agent="Matrix_location_bot")
+            location = geolocator.geocode(query)
+            if location:
+                locationmsg['body'] = location.address
+                locationmsg['geo_uri'] = 'geo:' + str(location.latitude) + ',' + str(location.longitude)
+            else:
+                await send_html("Can't find " + query + " on map!", client, room)
+                return
+
         await client.room_send(get_room_id(room), 'm.room.message', locationmsg)
 
 async def unknown_cb(room, event):
@@ -45,14 +65,9 @@ async def unknown_cb(room, event):
     float(latlon[1])
 
     osm_link = 'https://www.openstreetmap.org/?mlat=' + latlon[0] + "&mlon=" + latlon[1]
-
-    location_link_msg = {
-        "body": sender + ": " + location_text + ' - ' + osm_link,
-        "format": "org.matrix.custom.html",
-        "msgtype": "m.text"
-    }
-    await client.room_send(get_room_id(room), 'm.room.message', location_link_msg)
-
+    
+    body = sender + ' - ' + osm_link
+    await send_html(body, client, room)
 
 async def main():
     global client

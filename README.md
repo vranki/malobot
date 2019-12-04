@@ -41,5 +41,4 @@ docker-compose up
 
 ## Testing
 
-Say !loc in a room where the bot is - it will send a location and reply to itself with map link.
-
+Say !loc [location name] in a room where the bot is - it will send a location and reply to itself with map link.

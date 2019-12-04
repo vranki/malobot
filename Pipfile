@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 matrix-nio = "*"
+geopy = "*"
 
 [dev-packages]
 pylint = "*"
