@@ -9,4 +9,4 @@ RUN pipenv install --skip-lock --system
 
 COPY bot.py .
 
-CMD [ "python", "./bot.py" ]
+CMD [ "python", "-u", "./bot.py" ]

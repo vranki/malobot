@@ -1,7 +1,7 @@
 import asyncio
 import os
 import json
-from nio import (AsyncClient, RoomMessageText, RoomMessageUnknown)
+from nio import (AsyncClient, RoomMessageText, RoomMessageUnknown, JoinError, InviteEvent)
 from geopy.geocoders import Nominatim
 
 client = None
@@ -9,7 +9,6 @@ client = None
 async def send_html(body, client, room):
     msg = {
         "body": body,
-        "format": "org.matrix.custom.html",
         "msgtype": "m.text"
     }
     await client.room_send(get_room_id(room), 'm.room.message', msg)
@@ -69,9 +68,20 @@ async def unknown_cb(room, event):
     body = sender + ' - ' + osm_link
     await send_html(body, client, room)
 
+async def invite_cb(room, event):
+    for attempt in range(3):
+        result = await client.join(room.room_id)
+        if type(result) == JoinError:
+            print(f"Error joining room {room.room_id} (attempt %d): %s",
+                attempt, result.message,
+            )
+        else:
+            break
+
 async def main():
     global client
     access_token = os.getenv('MATRIX_ACCESS_TOKEN')
+    join_on_invite = os.getenv('JOIN_ON_INVITE')
 
     client = AsyncClient(os.environ['MATRIX_SERVER'], os.environ['MATRIX_USER'])
     if access_token:
@@ -83,6 +93,9 @@ async def main():
     if client.logged_in:
         client.add_event_callback(message_cb, RoomMessageText)
         client.add_event_callback(unknown_cb, RoomMessageUnknown)
+        if join_on_invite:
+            print('Note: Bot will join rooms if invited')
+            client.add_event_callback(invite_cb, (InviteEvent,))
         print('Bot running')
         await client.sync_forever(timeout=30000)
     else:
