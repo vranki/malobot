@@ -1,3 +1,11 @@
+# THIS BOT HAS BEEN MERGED TO HEMPPA AND IS DISCONTINUED
+
+Hemppa is a modular bot with lot of features and one of the
+modules is location bot - use this instead: https://github.com/vranki/hemppa
+
+
+
+
 # Malobot - Matrix location bot
 
 Location messages are not supported by any known Matrix
